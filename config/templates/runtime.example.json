@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "project_root": "${PROJECT_ROOT}",
+  "model_root": "${MODEL_ROOT}",
+  "python_executable": "${PROJECT_ROOT}\\runtime\\python\\cpython-3.12.13-windows-x86_64-none\\python.exe",
+  "python_site_packages": "${PROJECT_ROOT}\\runtime\\.venv\\Lib\\site-packages",
+  "comfyui_root": "${PROJECT_ROOT}\\runtime\\ComfyUI",
+  "extra_model_paths": "${PROJECT_ROOT}\\config\\extra_model_paths.yaml",
+  "listen": "127.0.0.1",
+  "port": 8188,
+  "offline": true,
+  "disable_async_offload": true,
+  "disable_dynamic_vram": true,
+  "low_vram": true,
+  "h3_dynamic_vram": true,
+  "h3_fast_disk": true,
+  "h3_vram_headroom_gb": 2.0,
+  "startup_timeout_seconds": 300,
+  "single_gpu_exclusive": true,
+  "lan_exposure": false
+}

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>擎光绘影·AIGC数字影像创作平台(CLSF AI. Lab Studio)</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ec4899' d='M4 7.5 12 3l8 4.5v9L12 21l-8-4.5z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/ui/styles.css">
+  <link rel="stylesheet" href="/ui/canvas-v2.css">
+</head>
+<body>
+  <a class="skip-link" href="#canvas">跳到画布</a>
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="i-logo" viewBox="0 0 24 24"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5zM8 10h8M8 14h5"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="5" width="14" height="14" rx="3"/><path d="m17 10 4-2v8l-4-2z"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m4 17 5-4 3 3 3-2 5 4"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16zM13 7l4 4M4 4h6"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></symbol>
+    <symbol id="i-voice" viewBox="0 0 24 24"><rect x="8" y="3" width="8" height="13" rx="4"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13M9 8l11-2"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
+    <symbol id="i-agent" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="13" rx="4"/><path d="M9 11h.01M15 11h.01M8 15h8M12 6V3M10 3h4"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M5 3h10l4 4v14H5zM14 3v5h5M8 12h8M8 16h6"/></symbol>
+    <symbol id="i-asset" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m4 17 5-4 3 3 3-2 5 4"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></symbol>
+    <symbol id="i-queue" viewBox="0 0 24 24"><path d="M4 6h16M4 12h11M4 18h8"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-fit" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z"/></symbol>
+    <symbol id="i-review" viewBox="0 0 24 24"><path d="M3 12s3-6 9-6 9 6 9 6-3 6-9 6-9-6-9-6Z"/><circle cx="12" cy="12" r="2.5"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 9h16M9 9v11"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 14h8l1-14M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-rename" viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16zM13 7l4 4"/></symbol>
+    <symbol id="i-group" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+    <symbol id="i-ungroup" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5M9 9h6v6H9z"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 7 4 12l5 5M5 12h8a6 6 0 0 1 6 6"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
+  </svg>
+
+  <div id="login" class="login-layer" role="dialog" aria-modal="true" aria-labelledby="login-title">
+    <form id="login-form" class="login-card">
+      <div class="brand-mark"><svg><use href="#i-logo"></use></svg></div>
+      <p class="eyebrow">CLSF AI. LAB STUDIO</p>
+      <h1 id="login-title">擎光绘影</h1>
+      <p class="brand-subtitle">AIGC数字影像创作平台</p>
+      <p class="login-copy">模型、素材和生成记录均留在本机。主机浏览器会自动登录，团队电脑请输入管理员提供的访问密钥。</p>
+      <label for="access-key">工作台访问密钥</label>
+      <input class="sr-only" tabindex="-1" aria-hidden="true" autocomplete="username" value="workbench">
+      <input id="access-key" type="password" autocomplete="current-password" placeholder="在团队电脑上输入">
+      <button class="primary wide" type="submit">进入工作台</button>
+      <p id="login-status" class="form-status" role="alert">正在检查本机身份…</p>
+    </form>
+  </div>
+
+  <div id="app" class="app-shell" hidden>
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark small"><svg><use href="#i-logo"></use></svg></span><span class="brand-copy"><strong>擎光绘影</strong><small>CLSF AI. Lab Studio</small></span><span class="local-pill">LOCAL</span></div>
+      <div class="project-control">
+        <label class="sr-only" for="project-select">当前项目</label>
+        <select id="project-select" aria-label="当前项目"></select>
+        <button id="new-project" class="icon-button" aria-label="新建项目" title="新建项目"><svg><use href="#i-plus"></use></svg></button>
+      </div>
+      <div id="provider-status" class="provider-status" aria-label="本地模型状态"></div>
+      <div class="top-actions">
+        <button id="upload-button" class="secondary"><svg><use href="#i-upload"></use></svg>导入素材</button>
+        <button id="batch-final" class="primary"><svg><use href="#i-check"></use></svg>已审批稿入复现终稿队列</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="toolrail" aria-label="创建节点">
+        <button data-add="video" class="tool-button active"><svg><use href="#i-video"></use></svg><span>视频</span></button>
+        <button data-add="image_t2i" class="tool-button"><svg><use href="#i-image"></use></svg><span>文生图</span></button>
+        <button data-add="image_i2i" class="tool-button"><svg><use href="#i-image"></use></svg><span>图生图</span></button>
+        <button data-add="image_edit" class="tool-button"><svg><use href="#i-edit"></use></svg><span>图片编辑</span></button>
+        <button data-add="tts" class="tool-button"><svg><use href="#i-voice"></use></svg><span>对白</span></button>
+        <button data-add="dialogue" class="tool-button"><svg><use href="#i-link"></use></svg><span>对白编排</span></button>
+        <button data-add="music" class="tool-button"><svg><use href="#i-music"></use></svg><span>音乐</span></button>
+        <button data-add="agent" class="tool-button"><svg><use href="#i-agent"></use></svg><span>Agent</span></button>
+        <button data-add="note" class="tool-button"><svg><use href="#i-note"></use></svg><span>便笺</span></button>
+        <div class="rail-spacer"></div>
+        <button id="toggle-assets" class="tool-button"><svg><use href="#i-library"></use></svg><span>资产</span></button>
+      </aside>
+
+      <section id="asset-panel" class="asset-panel" aria-label="项目资产库" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">ASSETS</p><h2>项目资产</h2></div><button id="close-assets" class="icon-button" aria-label="关闭资产库"><svg><use href="#i-close"></use></svg></button></div>
+        <div id="asset-list" class="asset-list"></div>
+      </section>
+
+      <section id="canvas" class="canvas" tabindex="0" aria-label="无限画布。拖动画布平移，滚轮缩放。">
+        <div id="world" class="world"></div>
+        <div id="selection-toolbar" class="selection-toolbar" hidden>
+          <button id="rename-selection" aria-label="重命名"><svg><use href="#i-rename"></use></svg><span>重命名</span></button>
+          <button id="group-selection" aria-label="组合所选节点"><svg><use href="#i-group"></use></svg><span>组合</span></button>
+          <button id="ungroup-selection" aria-label="解组"><svg><use href="#i-ungroup"></use></svg><span>解组</span></button>
+          <button id="delete-selection" class="danger-button" aria-label="删除所选节点"><svg><use href="#i-trash"></use></svg><span>删除</span></button>
+        </div>
+        <div class="canvas-hint">Shift 多选 · 拖端口连线 · Delete 删除 · F2 重命名 · Ctrl+G 组合 · Ctrl+Z 撤销</div>
+        <div class="zoom-controls" aria-label="画布缩放">
+          <button id="zoom-out" class="icon-button" aria-label="缩小">−</button>
+          <span id="zoom-value">100%</span>
+          <button id="zoom-in" class="icon-button" aria-label="放大">＋</button>
+          <button id="fit-view" class="icon-button" aria-label="适应画布"><svg><use href="#i-fit"></use></svg></button>
+        </div>
+      </section>
+
+      <section class="queue-dock" aria-label="GPU 任务队列">
+        <div class="queue-heading"><span><svg><use href="#i-queue"></use></svg>GPU 0 单队列</span><strong id="queue-summary">空闲</strong></div>
+        <div id="job-list" class="job-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <input id="file-input" type="file" hidden multiple accept="image/*,video/*,audio/*,.txt,.md,.json">
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/ui/canvas-v2.js" defer></script>
+</body>
+</html>

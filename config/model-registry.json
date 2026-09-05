@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "models": [
+    {
+      "id": "krea2-turbo-bf16",
+      "label": "Krea 2 Turbo BF16",
+      "modality": "image",
+      "backend": "comfyui",
+      "runtime_enabled": true,
+      "recommended": true,
+      "capabilities": ["text_to_image", "image_to_image", "style_reference"],
+      "profile": "quality_8_step",
+      "requirements": [
+        {"root": "model", "path": "image/krea2/diffusion_models/krea2_turbo_bf16.safetensors", "minimum_bytes": 25769803776},
+        {"root": "model", "path": "image/krea2/text_encoders/qwen3vl_4b_bf16.safetensors", "minimum_bytes": 8589934592},
+        {"root": "model", "path": "image/krea2/vae/qwen_image_vae.safetensors", "minimum_bytes": 209715200}
+      ],
+      "status_note": "BF16 high-quality runtime enabled; 1024 is the default production profile."
+    },
+    {
+      "id": "krea2-raw-bf16",
+      "label": "Krea 2 Raw BF16",
+      "modality": "image",
+      "backend": "comfyui",
+      "runtime_enabled": true,
+      "recommended": false,
+      "capabilities": ["text_to_image", "image_to_image", "complex_edit", "lora_training_base"],
+      "profile": "quality_raw",
+      "requirements": [
+        {"root": "model", "path": "image/krea2/diffusion_models/krea2_raw_bf16.safetensors", "minimum_bytes": 25769803776},
+        {"root": "model", "path": "image/krea2/text_encoders/qwen3vl_4b_bf16.safetensors", "minimum_bytes": 8589934592},
+        {"root": "model", "path": "image/krea2/vae/qwen_image_vae.safetensors", "minimum_bytes": 209715200}
+      ],
+      "status_note": "Enabled as the slower quality base for difficult editing and LoRA work."
+    },
+    {
+      "id": "krea2-identity-edit-v1.2",
+      "label": "Krea 2 Identity Edit v1.2",
+      "modality": "image",
+      "backend": "comfyui_custom_node",
+      "runtime_enabled": true,
+      "recommended": true,
+      "capabilities": ["identity_edit", "inpaint", "outpaint", "virtual_try_on", "two_image_edit"],
+      "profile": "identity_quality",
+      "requirements": [
+        {"root": "model", "path": "image/krea2/loras/Krea2/krea2_identity_edit_v1_2.safetensors", "minimum_bytes": 1073741824},
+        {"root": "workspace", "path": "runtime/ComfyUI/custom_nodes/comfyui-krea2edit/__init__.py", "minimum_bytes": 1000}
+      ],
+      "status_note": "Pinned node pack v1.2.5 loaded; identity, two-image and mask-guided editing enabled."
+    },
+    {
+      "id": "ideogram4-fp8",
+      "label": "Ideogram 4 FP8",
+      "modality": "image",
+      "backend": "comfyui",
+      "runtime_enabled": true,
+      "recommended": true,
+      "capabilities": ["text_to_image", "typography", "product_layout", "structured_prompt"],
+      "profile": "typography_quality",
+      "requirements": [
+        {"root": "model", "path": "image/ideogram4/diffusion_models/ideogram4_fp8_scaled.safetensors", "minimum_bytes": 8589934592},
+        {"root": "model", "path": "image/ideogram4/diffusion_models/ideogram4_unconditional_fp8_scaled.safetensors", "minimum_bytes": 8589934592},
+        {"root": "model", "path": "image/ideogram4/text_encoders/qwen3vl_8b_fp8_scaled.safetensors", "minimum_bytes": 9663676416},
+        {"root": "model", "path": "image/ideogram4/vae/flux2-vae.safetensors", "minimum_bytes": 314572800}
+      ],
+      "status_note": "Quality workflow enabled for internal teaching and research; non-commercial model agreement applies."
+    },
+    {
+      "id": "qwen3.6-27b-q4",
+      "label": "Qwen 3.6 27B · 中文默认",
+      "modality": "prompt",
+      "backend": "llama.cpp",
+      "runtime_enabled": true,
+      "recommended": true,
+      "capabilities": ["prompt_optimize", "agent", "chinese"],
+      "requirements": [
+        {"root": "model", "path": "llm/Qwen3.6-27B-GGUF/Qwen3.6-27B-Q4_K_M.gguf", "minimum_bytes": 10737418240},
+        {"root": "workspace", "path": "runtime/llama.cpp/llama-cli.exe", "minimum_bytes": 1},
+        {"root": "workspace", "path": "runtime/llama.cpp/llama-common.dll", "minimum_bytes": 5000000}
+      ]
+    },
+    {
+      "id": "gemma4-26b-ollama",
+      "label": "Gemma 4 26B · 平衡",
+      "modality": "prompt",
+    "backend": "ollama",
+    "ollama_model": "gemma4:26b",
+    "storage_root": "llm/ollama",
+      "runtime_enabled": true,
+      "recommended": false,
+      "capabilities": ["prompt_optimize", "agent", "multimodal"],
+      "requirements": [],
+      "availability": "local_ollama",
+    "status_note": "Stored under the unified model root and served by the local Ollama runtime."
+    },
+    {
+      "id": "gemma4-31b-ollama",
+      "label": "Gemma 4 31B · 质量",
+      "modality": "prompt",
+    "backend": "ollama",
+    "ollama_model": "gemma4:31b",
+    "storage_root": "llm/ollama",
+      "runtime_enabled": true,
+      "recommended": false,
+      "capabilities": ["prompt_optimize", "agent", "multimodal"],
+      "requirements": [],
+      "availability": "local_ollama",
+    "status_note": "Stored under the unified model root; selected for higher-quality prompt rewriting."
+    }
+  ]
+}

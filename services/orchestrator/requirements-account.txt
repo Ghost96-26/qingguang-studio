@@ -1,0 +1,2 @@
+# Additional gateway dependencies for the account/avatar iteration.
+Pillow==12.3.0

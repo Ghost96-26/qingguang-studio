@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "description": "原创中文视觉引导片段；仅借鉴公开提示词库的分类与参数组织，不调用其API，不声称精确模拟摄影器材。",
+  "sources": [
+    "https://github.com/EvoLinkAI/awesome-gpt-image-2-prompts",
+    "https://github.com/Pixmind-io/awesome-gpt-image-2-prompts",
+    "https://github.com/erickkkyt/awesome-gptimage2-prompts",
+    "https://huggingface.co/MiniMaxAI/MiniMax-H3"
+  ],
+  "models": [
+    {"id":"h3-int8-native","label":"H3 · 原生 INT8","profile":"quality","modes":["t2v","i2v","fl2v","reference","audio_drive"]},
+    {"id":"h3-int8-turbo4","label":"H3 · Turbo 4步","profile":"preview4","modes":["t2v","i2v","fl2v","reference","audio_drive"]},
+    {"id":"h3-int8-turbo8","label":"H3 · Turbo 8步","profile":"preview8","modes":["t2v","i2v","fl2v","audio_drive"]}
+  ],
+  "guidance_header": "[视觉与摄影引导：只调整对应的风格和摄影表现，保留正文的主体身份、事件与声音。器材名称仅为审美参考，不代表物理模拟。]",
+  "groups": [
+    {"key":"video_style","label":"风格","options":[
+      {"id":"none","label":"遵循原提示词","text":""},
+      {"id":"fuji-classic","label":"富士胶片 · 清新","text":"风格：富士负片审美，清透的自然肤色，克制的青绿色与温暖高光，细微颗粒；面部保持清楚，不额外柔焦。"},
+      {"id":"fuji-eterna","label":"富士 Eterna · 电影","text":"风格：Eterna电影胶片审美，低饱和、柔和高光过渡、沉稳阴影，保留皮肤层次与真实面部细节。"},
+      {"id":"kodak-portrait","label":"暖调人像负片","text":"风格：温暖的人像负片色彩，柔和而准确的肤色，自然光比，轻微胶片颗粒，不磨皮。"},
+      {"id":"bw-film","label":"黑白银盐","text":"风格：黑白银盐摄影，丰富的灰阶，清晰的面部结构，克制颗粒与高光，避免高反差吞没五官。"},
+      {"id":"bleach-bypass","label":"漂白旁路 · 冷峻","text":"风格：漂白旁路般的低饱和色彩、厚重阴影与金属质感，保留高光细节和可辨认的肤色层次。"},
+      {"id":"neon-noir","label":"霓虹黑色电影","text":"风格：夜间黑色电影氛围，克制的青蓝与洋红实景光源，雨后反射和深色背景，主体面部准确曝光。"},
+      {"id":"documentary","label":"自然纪实","text":"风格：自然纪实摄影，真实环境光、准确色彩、细腻肤理和可信的材质，不增加戏剧滤镜。"},
+      {"id":"product-studio","label":"产品广告 · 棚拍","text":"风格：精致产品广告，干净背景、受控柔光和清楚轮廓，材质、边缘与品牌文字在时间上保持稳定。"},
+      {"id":"food-editorial","label":"美食杂志","text":"风格：美食杂志摄影，温暖侧光、真实食物纹理、适度湿润光泽与层次，不夸大油亮与颜色。"},
+      {"id":"landscape","label":"自然风光 · 大地色","text":"风格：写实风光摄影，自然的大地色、通透空气与远近层次，细节清晰，天空与植被不过度饱和。"},
+      {"id":"woodcut","label":"木刻版画","text":"风格：木刻版画，明确的黑白或有限色块、刀刻排线与纸张肌理；保留人物身份和五官结构，纹理随主体稳定运动。"},
+      {"id":"watercolor","label":"水彩绘本","text":"风格：水彩绘本，透明叠色、纸张纹理和自然晕染，主体轮廓与面部特征可辨，避免纹理逐帧跳动。"},
+      {"id":"inkwash","label":"东方水墨","text":"风格：东方水墨，浓淡墨色、留白与少量设色，人物轮廓和身份稳定，笔触随动作连续变化。"},
+      {"id":"cel-animation","label":"赛璐璐动画","text":"风格：赛璐璐动画，干净线条、平整色块与清楚的明暗分区，角色设定与线条粗细保持帧间一致。"},
+      {"id":"clay-stopmotion","label":"黏土定格","text":"风格：手工黏土定格审美，可见的手作材质、小型布景与柔和灯光，角色脸部特征稳定，不改变输出帧率。"},
+      {"id":"oil-painting","label":"古典油画","text":"风格：古典油画，层次丰富的颜料质感、稳定的笔触与明暗塑形，人物五官清楚，避免面部结构变形。"}
+    ]},
+    {"key":"camera_body","label":"摄影机审美","options":[
+      {"id":"none","label":"自动 / 原提示词","text":""},
+      {"id":"alexa35","label":"ARRI ALEXA 35","text":"摄影机审美参考：ARRI ALEXA 35，自然肤色、宽容的高光层次与电影感色调。"},
+      {"id":"venice2","label":"Sony VENICE 2","text":"摄影机审美参考：Sony VENICE 2，洁净细节、细腻暗部与沉稳的现代电影色彩。"},
+      {"id":"vraptor","label":"RED V-RAPTOR","text":"摄影机审美参考：RED V-RAPTOR，清楚的材质层次、利落的视觉质感与丰富的高光细节。"},
+      {"id":"super16","label":"Super 16 胶片","text":"摄影机审美参考：Super 16胶片，细微颗粒、有机色彩与自然的反差，保留清楚的五官。"}
+    ]},
+    {"key":"camera_lens","label":"镜头审美","options":[
+      {"id":"none","label":"自动 / 原提示词","text":""},
+      {"id":"cooke-s4","label":"Cooke S4","text":"镜头审美参考：Cooke S4，温润的肤色过渡与柔和背景散景，焦内人脸保持清晰。"},
+      {"id":"zeiss-master","label":"ZEISS Master Prime","text":"镜头审美参考：ZEISS Master Prime，干净的微反差、清楚的焦内细节和中性的色彩表现。"},
+      {"id":"leica-summilux","label":"Leica Summilux-C","text":"镜头审美参考：Leica Summilux-C，细腻肤理与自然的明暗过渡，清楚且不过度锐化。"},
+      {"id":"anamorphic","label":"变形宽银幕镜头","text":"镜头审美参考：变形宽银幕电影镜头，克制的水平耀斑与椭圆背景散景，不拉伸人物五官。"},
+      {"id":"macro","label":"微距镜头","text":"镜头审美参考：微距摄影，突出主体表面细小纹理与清楚的焦内细节。"}
+    ]},
+    {"key":"focal_length","label":"焦段引导","options":[
+      {"id":"none","label":"自动","text":""},
+      {"id":"18mm","label":"18 mm · 超广角","text":"焦段引导：约18mm超广角的空间感，避免近距离夸张拉伸人脸。"},
+      {"id":"24mm","label":"24 mm · 广角","text":"焦段引导：约24mm广角，展现人物与环境关系，保持可信的透视。"},
+      {"id":"35mm","label":"35 mm · 环境人像","text":"焦段引导：约35mm的自然环境人像视角，兼顾人物和周围场景。"},
+      {"id":"50mm","label":"50 mm · 标准","text":"焦段引导：约50mm标准视角，自然透视与可信的人物比例。"},
+      {"id":"85mm","label":"85 mm · 人像","text":"焦段引导：约85mm人像视角，舒适的面部比例与适度背景压缩。"},
+      {"id":"135mm","label":"135 mm · 长焦","text":"焦段引导：约135mm长焦的背景压缩感，主体与背景清楚分离。"}
+    ]},
+    {"key":"aperture","label":"景深引导","options":[
+      {"id":"none","label":"自动","text":""},
+      {"id":"f1.4","label":"f/1.4 · 浅景深","text":"景深引导：类似f/1.4的浅景深，跟焦锁定人物眼睛，虚化背景而非面部。"},
+      {"id":"f2.8","label":"f/2.8 · 人物分离","text":"景深引导：类似f/2.8的背景分离，主体整张脸保持在清晰焦内。"},
+      {"id":"f4","label":"f/4 · 适中景深","text":"景深引导：类似f/4的适中景深，两人互动时尽量使双方脸部清楚可辨。"},
+      {"id":"f8","label":"f/8 · 深景深","text":"景深引导：类似f/8的较深景深，人物与场景均保留丰富的可辨认细节。"}
+    ]},
+    {"key":"camera_motion","label":"运镜引导","options":[
+      {"id":"none","label":"遵循原提示词","text":""},
+      {"id":"locked","label":"固定机位","text":"运镜：固定机位，画面稳定，不添加镜头晃动或突然切换，主体动作正常发生。"},
+      {"id":"slow-push","label":"缓慢推近","text":"运镜：平稳缓慢推近主体，连续跟焦，不突然变焦或改变运动方向。"},
+      {"id":"pull-back","label":"缓慢拉远","text":"运镜：平稳缓慢拉远，逐渐呈现环境，保持主体身份与空间关系。"},
+      {"id":"tracking","label":"平稳跟拍","text":"运镜：稳定器平稳跟拍主体，运动方向连贯，持续跟焦，避免不必要的镜头剧烈晃动。"},
+      {"id":"pan","label":"水平摇镜","text":"运镜：缓慢而连贯的水平摇镜，主体在画面中保持合理位置，不突然切镜。"},
+      {"id":"orbit","label":"缓慢环绕","text":"运镜：小幅度平稳环绕主体，空间和人物结构连续，避免快速旋转。"},
+      {"id":"handheld","label":"轻微手持","text":"运镜：克制的手持呼吸感，避免大幅晃动和持续失焦。"}
+    ]}
+  ]
+}

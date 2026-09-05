@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/public/assets/hero.svg" width="100%" alt="擎光绘影 · Qingguang Studio" />
+<img src="assets/hero.svg" width="100%" alt="擎光绘影 · Qingguang Studio" />
 
 **把素材、镜头与声音，连接在同一张画布上。**
 
@@ -8,7 +8,7 @@
 
 `Windows` · `RTX 5090` · `Local inference` · `React + Python`
 
-[界面展示](#工作台一览) · [实测视频](#真实生成样片) · [部署指南](docs/public/DEPLOYMENT.md) · [Agent 部署约定](docs/public/AGENT-DEPLOYMENT.md)
+[界面展示](#工作台一览) · [实测视频](#真实生成样片) · [部署指南](DEPLOYMENT.md) · [Agent 部署约定](AGENT-DEPLOYMENT.md)
 
 </div>
 
@@ -38,7 +38,7 @@
 
 安排动作、表演与摄影意图，按素材角色组织参考输入；同一后端编译器生成指令预览与实际提交文本。
 
-![H3-IR 导演台与本地 Agent 面板](docs/public/assets/director-panel.png)
+![H3-IR 导演台与本地 Agent 面板](assets/director-panel.png)
 
 <sub>2026-09-01 · 实际导演台与 Agent 面板。摄影参数属于提示词指导，不是物理摄影机模拟。</sub>
 
@@ -46,7 +46,7 @@
 
 图片、视频与音频按项目集中管理，支持场景、人物、道具分类。局部编辑沿用同一条指令，生成结果可继续连接到下一步。
 
-![项目资产库与图像编辑工作区](docs/public/assets/asset-library.png)
+![项目资产库与图像编辑工作区](assets/asset-library.png)
 
 <sub>2026-08-29 · 资产库和 Identity Edit 图像编辑验收界面。</sub>
 
@@ -54,15 +54,15 @@
 
 在节点附近选择原生质量或配套 Turbo 路线，独立调整分辨率与采样步数，保留旧任务的实际参数。
 
-![视频模型选择与画布节点](docs/public/assets/model-panel.png)
+![视频模型选择与画布节点](assets/model-panel.png)
 
 <sub>2026-08-29 · 历史模型选择面板。当前新建 H3 节点默认 1344×768、原生 30 步；截图中的旧任务设置不代表当前默认值。</sub>
 
 ## 真实生成样片
 
-[![H3 Director 实测样片：点击查看视频](docs/public/assets/director-poster.png)](docs/public/assets/director-demo.mp4)
+[![H3 Director 实测样片：点击查看视频](assets/director-poster.png)](assets/director-demo.mp4)
 
-**[▶ 查看约 5 秒 H3 实测视频](docs/public/assets/director-demo.mp4)** · 约 267 KB 展示版
+**[▶ 查看约 5 秒 H3 实测视频](assets/director-demo.mp4)** · 约 267 KB 展示版
 
 | 项目 | 记录 |
 |---|---|
@@ -85,7 +85,7 @@
 | Agent 分镜 | Qwen 真实完成 6×5 秒文字规划 | 规划器不读取图片像素；文字规划不等于整片画质验收 |
 | 轻量发布 | 脱敏、配置保护、文件校验、语法与暂存检查 | 模型、环境、用户数据库不进入仓库 |
 
-完整记录与边界见 [开发进度](docs/public/PROJECT-STATUS.md) 和 [公开包验证说明](docs/public/RELEASE-VALIDATION.md)。
+完整记录与边界见 [开发进度](PROJECT-STATUS.md) 和 [公开包验证说明](RELEASE-VALIDATION.md)。
 
 ## 系统如何协作
 
@@ -107,10 +107,10 @@ flowchart LR
 
 ## 从哪里开始
 
-1. [目标、进度与技术方案](docs/public/PROJECT-STATUS.md)：了解已交付能力与下一阶段。
-2. [详细部署指南](docs/public/DEPLOYMENT.md)：核对硬件、运行栈、模型来源和恢复步骤。
+1. [目标、进度与技术方案](PROJECT-STATUS.md)：了解已交付能力与下一阶段。
+2. [详细部署指南](DEPLOYMENT.md)：核对硬件、运行栈、模型来源和恢复步骤。
 3. 用 `scripts/initialize_public_config.py` 创建自己的配置，按需下载模型并逐模态验收。
-4. [Agent 部署约定](docs/public/AGENT-DEPLOYMENT.md)：可直接交给部署 Agent 阅读。
+4. [Agent 部署约定](AGENT-DEPLOYMENT.md)：可直接交给部署 Agent 阅读。
 
 本机基线：RTX 5090 / 32 GB 显存 / 64 GB RAM；Python 3.12.13 + PyTorch 2.11.0/cu130。默认入口 `127.0.0.1:8090/v3`，ComfyUI 内部端口 8188。
 
@@ -118,7 +118,7 @@ flowchart LR
 
 只保存源码、配置模板、版本文本、部署文档与少量精选展示素材。**不上传模型权重、虚拟环境、node_modules、用户素材库、数据库、密钥或日志。** 约 1.3 MB 配图/视频使用明确允许名单，其他媒体仍默认排除。
 
-[发布与流量控制说明](docs/public/PUBLISHING.md)
+[发布与流量控制说明](PUBLISHING.md)
 
 <details>
 <summary><strong>当前能力边界与许可</strong></summary>

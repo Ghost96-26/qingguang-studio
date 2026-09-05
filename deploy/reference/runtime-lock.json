@@ -1,0 +1,21 @@
+{
+  "created_utc": "2026-08-25T02:40:00Z",
+  "platform": "Windows",
+  "gpu": "NVIDIA GeForce RTX 5090",
+  "driver": "610.47",
+  "python": "3.12.13",
+  "torch": "2.11.0+cu130",
+  "torch_cuda": "13.0",
+  "comfy_kitchen": "0.2.31",
+  "comfyui_version": "0.33.0",
+  "comfyui_commit": "5f0c4e18cb7e98f0e7c46c2c7ce928d641351e67",
+  "h3lite_commit": "9bafafa6f1741fd6eb49d46b078e2dbb0feec3be",
+  "model_route": "official-native-int8-32b",
+  "model_root": "${MODEL_ROOT}",
+  "comfyui_root": "${PROJECT_ROOT}\\runtime\\ComfyUI",
+  "sources": {
+    "comfyui": "https://github.com/Comfy-Org/ComfyUI",
+    "h3lite_reference": "https://github.com/Rimagination/h3lite",
+    "pytorch_index": "https://download.pytorch.org/whl/cu130"
+  }
+}
