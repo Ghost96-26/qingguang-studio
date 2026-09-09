@@ -33,6 +33,11 @@ class Settings:
         return key
 
     @property
+    def public_edge_secret(self) -> str:
+        secret_path = self.path("api_key_file")
+        payload = json.loads(secret_path.read_text(encoding="utf-8-sig"))
+        return str(payload.get("public_edge_secret", "")).strip()
+
+    @property
     def base_url(self) -> str:
         return f"http://{self.raw['listen']}:{self.raw['port']}"
-

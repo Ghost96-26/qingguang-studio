@@ -4,6 +4,7 @@ Run from the private workspace. A new destination is mandatory. No network or Gi
 operations are performed. Never print matching secrets in findings.
 """
 import argparse
+from datetime import date
 import hashlib
 import json
 import os
@@ -17,6 +18,7 @@ SCRIPT_NAMES = {
     'Common-H3Runtime.ps1', 'Install-H3Runtime.ps1', 'Start-H3Runtime.ps1',
     'Stop-H3Runtime.ps1', 'Restart-H3Runtime.ps1', 'Start-WorkbenchGateway.ps1',
     'Stop-WorkbenchGateway.ps1', 'Initialize-GatewaySecrets.ps1', 'Open-H3Workbench.ps1',
+    'Open-AdminConsole.ps1',
     'Test-H3Runtime.ps1', 'Test-Workbench.ps1', 'Run-H3SmokeTest.ps1',
     'Common-ImageModelDownload.ps1', 'Download-ImageModels-CN-BF16.ps1',
     'Download-ImageModels-HF-VPN.ps1', 'Common-HunyuanVideoFoleyDownload.ps1',
@@ -57,6 +59,7 @@ def main():
     selected.update(Path('scripts') / name for name in SCRIPT_NAMES)
     selected.update(p.relative_to(SOURCE) for p in SOURCE.glob('[0-9][0-9]_*.cmd'))
     selected.update(Path(name) for name in ('01_MiniMax_H3_CN_Download.ps1', '02_MiniMax_H3_HF_VPN_Download.ps1', '.gitignore', 'config/model-registry.json', 'config/runtime-packages.txt', 'config/indextts-py312-requirements.txt', 'services/ui-v3/.openai/hosting.json'))
+    selected.add(Path('docs/local-admin-console.md'))
     selected.update(p.relative_to(SOURCE) for p in (SOURCE / 'config/templates').glob('*.json'))
     selected.update(p.relative_to(SOURCE) for p in (SOURCE / 'docs/public').glob('*.md'))
     selected.update(p.relative_to(SOURCE) for p in (SOURCE / 'deploy/reference').glob('*') if p.is_file())
@@ -89,8 +92,9 @@ def main():
         target = dest / path
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
-    report = {'date': '2026-09-06', 'files': len(encoded), 'bytes': sum(map(len, encoded.values())), 'findings': [], 'scope': 'allowlisted source plus SHA256-reviewed showcase; exact local secret comparison and pattern scan', 'inventory': [{'path': p, 'bytes': len(b), 'sha256': hashlib.sha256(b).hexdigest()} for p, b in sorted(encoded.items())]}
-    (dest / 'PUBLIC-EXPORT-REPORT.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+    report = {'date': date.today().isoformat(), 'files': len(encoded), 'bytes': sum(map(len, encoded.values())), 'findings': [], 'scope': 'allowlisted source plus SHA256-reviewed showcase; exact local secret comparison and pattern scan', 'inventory': [{'path': p, 'bytes': len(b), 'sha256': hashlib.sha256(b).hexdigest()} for p, b in sorted(encoded.items())]}
+    with (dest / 'PUBLIC-EXPORT-REPORT.json').open('w', encoding='utf-8', newline='\n') as handle:
+        handle.write(json.dumps(report, indent=2) + '\n')
     print(json.dumps({'destination': str(dest), 'files': report['files'], 'bytes_before_report': report['bytes'], 'findings': 0}))
 
 

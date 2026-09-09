@@ -7,6 +7,7 @@ import { useCanvasStore } from "./canvas-store";
 import { videoRenderParams } from "./h3-director";
 import { CreativeAgentPanel } from "./components/CreativeAgentPanel";
 import { AccountCenter } from "./components/AccountCenter";
+import { AdminConsole } from "./components/AdminConsole";
 import { AuthScreen } from "./components/AuthScreen";
 import { AssetDrawer } from "./components/AssetDrawer";
 import { CanvasStage } from "./components/CanvasStage";
@@ -23,6 +24,8 @@ import { productionJobBindings, referencedImageIds, storyboardGraph, type AgentR
 
 type ToastState = { message: string; tone: "default" | "success" | "danger" } | null;
 type ExternalRenameUndo = { label: string; canvasDepth: number; canvasTail: unknown; undo: () => Promise<void> };
+
+const ADMIN_PATH = window.location.pathname.replace(/\/+$/, "") === "/v3/admin";
 
 export function App() {
   const nodes = useCanvasStore((state) => state.nodes);
@@ -72,7 +75,7 @@ export function App() {
   const currentProject = projects.find((project) => project.id === projectId);
   const currentProjectRole = currentProject?.current_user_role || "viewer";
   const canEditCurrentProject = currentProjectRole === "owner" || currentProjectRole === "editor";
-  const canCreateProjects = Boolean(currentUser);
+  const canCreateProjects = Boolean(currentUser?.can_create_projects);
 
   const pushRenameUndo = useCallback((label: string, undo: () => Promise<void>) => {
     const temporal = useCanvasStore.temporal.getState();
@@ -139,6 +142,10 @@ export function App() {
   }, [replaceGraph]);
 
   const boot = useCallback(async () => {
+    if (ADMIN_PATH) {
+      setAuthState("ready");
+      return;
+    }
     const [nextCapabilities, nextProjects, nextGroups, nextUsage] = await Promise.all([
       workbenchApi.capabilities(),
       workbenchApi.projects(true),
@@ -199,7 +206,7 @@ export function App() {
   }, [authState, canEditCurrentProject, edges, loaded, nodes, notify]);
 
   useEffect(() => {
-    if (authState !== "ready") return;
+    if (authState !== "ready" || ADMIN_PATH) return;
     const timer = window.setInterval(async () => {
       try {
         const refreshingProject = projectIdRef.current;
@@ -231,14 +238,14 @@ export function App() {
   }, [authState, updateNodeData, withoutCanvasHistory]);
 
   useEffect(() => {
-    if (authState !== "ready") return;
+    if (authState !== "ready" || ADMIN_PATH) return;
     const refresh = () => workbenchApi.capabilities().then(setCapabilities).catch(() => undefined);
     const timer = window.setInterval(refresh, 12000);
     return () => window.clearInterval(timer);
   }, [authState]);
 
   useEffect(() => {
-    if (authState !== "ready") return;
+    if (authState !== "ready" || ADMIN_PATH) return;
     const refresh = () => workbenchApi.accountUsage().then(setAccountUsage).catch(() => undefined);
     const timer = window.setInterval(refresh, 15000);
     return () => window.clearInterval(timer);
@@ -879,6 +886,9 @@ export function App() {
   if (authState === "checking") return <div className="boot-screen"><span><SpinnerGap className="spin" /></span><strong>正在连接本地创作引擎</strong><small>模型与素材不会离开这台设备</small></div>;
   if (authState === "login") return <AuthScreen error={authError} onAuthenticated={async (session: AuthSession) => { setCurrentUser(session.user); await boot(); }} />;
   if (!currentUser) return <AuthScreen error="账户会话已失效，请重新登录" onAuthenticated={async (session: AuthSession) => { setCurrentUser(session.user); await boot(); }} />;
+  if (ADMIN_PATH) return currentUser.is_admin
+    ? <AdminConsole user={currentUser} />
+    : <div className="boot-screen"><span><CheckCircle /></span><strong>此账户没有管理权限</strong><small>请使用平台主管账户，或返回创作台继续工作。</small><a className="admin-access-back" href="/v3">返回创作台</a></div>;
 
   const selectedNodes = nodes.filter((node) => node.selected && node.data.kind !== "group");
   const activeQueue = jobs.filter((job) => ["queued", "running"].includes(job.status)).length;

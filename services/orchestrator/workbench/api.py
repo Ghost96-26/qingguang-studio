@@ -3,7 +3,6 @@ from __future__ import annotations
 import secrets
 import hashlib
 import hmac
-import ipaddress
 import mimetypes
 import shutil
 import json
@@ -28,6 +27,7 @@ from .store import JobStore
 from .worker import JobWorker
 from .video_options import video_options
 from .production import ProductionService
+from .request_security import AuthRateLimiter, is_direct_local
 
 
 settings = Settings.load()
@@ -157,6 +157,14 @@ class ProjectMemberUpdate(BaseModel):
     queue_priority: int | None = Field(default=None, ge=1, le=5)
 
 
+class AdminUserUpdate(BaseModel):
+    status: str | None = Field(default=None, pattern="^(active|suspended)$")
+    organization_role: str | None = Field(default=None, pattern="^(member|admin|owner)$")
+    can_create_projects: bool | None = None
+    monthly_compute_minutes_limit: int | None = Field(default=None, ge=0, le=1_000_000)
+    max_active_jobs: int | None = Field(default=None, ge=1, le=500)
+
+
 class InvitationCreate(BaseModel):
     email: str | None = Field(default=None, max_length=254)
     project_id: str | None = None
@@ -184,6 +192,7 @@ class UploadCompleteRequest(BaseModel):
 
 
 SESSION_COOKIE = "clsf_session"
+auth_limiter = AuthRateLimiter()
 
 
 def _request_ip(request: Request) -> str:
@@ -192,11 +201,35 @@ def _request_ip(request: Request) -> str:
 
 
 def _is_loopback(request: Request) -> bool:
-    host = request.client.host if request.client else ""
-    try:
-        return ipaddress.ip_address(host).is_loopback
-    except ValueError:
-        return host in {"localhost", "testclient"}
+    return is_direct_local(request)
+
+
+@app.middleware("http")
+async def public_boundary(request: Request, call_next):
+    direct = _is_loopback(request)
+    if not direct:
+        path = request.url.path
+        expected_edge_secret = settings.public_edge_secret
+        supplied_edge_secret = request.headers.get("x-qingguang-edge-secret", "")
+        if expected_edge_secret and not secrets.compare_digest(supplied_edge_secret, expected_edge_secret):
+            return JSONResponse({"detail": "Public edge authentication required"}, status_code=403)
+        if path in {"/docs", "/docs/oauth2-redirect", "/redoc", "/openapi.json", "/v1/local-auth"}:
+            return JSONResponse({"detail": "Not available through remote access"}, status_code=403)
+        origin = request.headers.get("origin")
+        if request.method not in {"GET", "HEAD", "OPTIONS"} and origin:
+            expected = request.headers.get("x-qingguang-public-origin") or f"https://{request.headers.get('host', '')}"
+            if origin != expected:
+                return JSONResponse({"detail": "请求来源不匹配"}, status_code=403)
+        if path in {"/v1/auth/login", "/v1/auth/register", "/v1/auth/invitations/preview"}:
+            if not auth_limiter.allow(_request_ip(request)):
+                return JSONResponse({"detail": "尝试过于频繁，请稍后重试"}, status_code=429, headers={"Retry-After": "60"})
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Frame-Options"] = "DENY"
+    if request.url.path.startswith(("/v1/", "/media/", "/d/")) or request.url.path == "/health":
+        response.headers["Cache-Control"] = "private, no-store"
+    return response
 
 
 def require_principal(
@@ -233,9 +266,20 @@ def _set_session_cookie(response: JSONResponse, payload: dict[str, Any], *, secu
     )
 
 
+def _secure_session(request: Request) -> bool:
+    return not _is_loopback(request) or request.url.scheme == "https"
+
+
 def _project_guard(principal: Principal, project_id: str, minimum_role: str = "viewer") -> None:
     if not auth_store.can_project(principal, project_id, minimum_role):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权访问该项目")
+
+
+def _local_admin_guard(request: Request, principal: Principal) -> None:
+    if not _is_loopback(request):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="管理后台只允许在本机访问")
+    if not principal.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有平台主管可以访问管理后台")
 
 
 def _asset_guard(principal: Principal, asset_id: str, minimum_role: str = "viewer") -> dict[str, Any]:
@@ -283,7 +327,9 @@ def _ensure_personal_project(principal: Principal) -> dict[str, Any]:
 
 
 @app.get("/health")
-def health() -> dict[str, Any]:
+def health(request: Request) -> dict[str, Any]:
+    if not _is_loopback(request):
+        return {"status": "ok"}
     return {
         "status": "ok",
         "version": __version__,
@@ -329,7 +375,7 @@ def register(body: RegisterRequest, request: Request) -> JSONResponse:
     if principal:
         _ensure_personal_project(principal)
     response = JSONResponse({key: value for key, value in payload.items() if key != "session_token"})
-    _set_session_cookie(response, payload, secure=request.headers.get("x-forwarded-proto") == "https")
+    _set_session_cookie(response, payload, secure=_secure_session(request))
     return response
 
 
@@ -348,7 +394,7 @@ def login(body: LoginRequest, request: Request) -> JSONResponse:
     if principal and principal.user_id != "local-owner":
         _ensure_personal_project(principal)
     response = JSONResponse({key: value for key, value in payload.items() if key != "session_token"})
-    _set_session_cookie(response, payload, secure=request.headers.get("x-forwarded-proto") == "https")
+    _set_session_cookie(response, payload, secure=_secure_session(request))
     return response
 
 
@@ -475,13 +521,87 @@ def remove_project_member(project_id: str, user_id: str, principal: Principal = 
 
 @app.get("/v1/admin/audit")
 def list_audit(
+    request: Request,
     limit: int = Query(default=200, ge=1, le=1000),
     principal: Principal = Depends(require_principal),
 ) -> list[dict[str, Any]]:
+    _local_admin_guard(request, principal)
     try:
         return auth_store.list_audit(principal, limit=limit)
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
+@app.get("/v1/admin/overview")
+def admin_overview(
+    request: Request,
+    days: int = Query(default=30, ge=1, le=365),
+    principal: Principal = Depends(require_principal),
+) -> dict[str, Any]:
+    _local_admin_guard(request, principal)
+    return auth_store.admin_overview(principal, days=days)
+
+
+@app.get("/v1/admin/users")
+def admin_users(
+    request: Request,
+    days: int = Query(default=30, ge=1, le=365),
+    principal: Principal = Depends(require_principal),
+) -> list[dict[str, Any]]:
+    _local_admin_guard(request, principal)
+    return auth_store.list_admin_users(principal, days=days)
+
+
+@app.patch("/v1/admin/users/{user_id}")
+def update_admin_user(
+    user_id: str,
+    body: AdminUserUpdate,
+    request: Request,
+    principal: Principal = Depends(require_principal),
+) -> dict[str, Any]:
+    _local_admin_guard(request, principal)
+    quota: int | None | object = ...
+    if "monthly_compute_minutes_limit" in body.model_fields_set:
+        quota = None if body.monthly_compute_minutes_limit is None else body.monthly_compute_minutes_limit * 60
+    try:
+        return auth_store.update_admin_user(
+            principal,
+            user_id,
+            status=body.status,
+            organization_role=body.organization_role,
+            can_create_projects=body.can_create_projects,
+            monthly_compute_seconds_limit=quota,
+            max_active_jobs=body.max_active_jobs,
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post("/v1/admin/users/{user_id}/sessions/revoke")
+def revoke_admin_user_sessions(
+    user_id: str,
+    request: Request,
+    principal: Principal = Depends(require_principal),
+) -> dict[str, Any]:
+    _local_admin_guard(request, principal)
+    try:
+        return {"revoked_sessions": auth_store.revoke_admin_user_sessions(principal, user_id)}
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/v1/admin/access-events")
+def admin_access_events(
+    request: Request,
+    limit: int = Query(default=200, ge=1, le=1000),
+    principal: Principal = Depends(require_principal),
+) -> list[dict[str, Any]]:
+    _local_admin_guard(request, principal)
+    return auth_store.list_admin_access_events(principal, limit=limit)
 
 
 @app.get("/v1/capabilities")
@@ -490,7 +610,9 @@ def capabilities(_: Principal = Depends(require_principal)) -> dict[str, Any]:
 
 
 @app.post("/v1/runtime/comfy/start")
-def start_comfy_runtime(_: Principal = Depends(require_principal)) -> dict[str, Any]:
+def start_comfy_runtime(principal: Principal = Depends(require_principal)) -> dict[str, Any]:
+    if not principal.is_admin:
+        raise HTTPException(status_code=403, detail="只有平台主管可以启动生成引擎")
     try:
         next_capabilities = providers.ensure_comfy_runtime()
     except RuntimeError as exc:
@@ -1266,6 +1388,17 @@ def workbench_ui() -> FileResponse:
 @app.get("/v3", include_in_schema=False)
 @app.get("/v3/", include_in_schema=False)
 def workbench_ui_v3() -> FileResponse:
+    index = UI_V3_ROOT / "index.html"
+    if not index.is_file():
+        raise HTTPException(status_code=503, detail="V3 workbench frontend has not been built")
+    return FileResponse(index)
+
+
+@app.get("/v3/admin", include_in_schema=False)
+@app.get("/v3/admin/", include_in_schema=False)
+def workbench_admin_v3(request: Request) -> FileResponse:
+    if not _is_loopback(request):
+        raise HTTPException(status_code=403, detail="管理后台只允许在本机访问")
     index = UI_V3_ROOT / "index.html"
     if not index.is_file():
         raise HTTPException(status_code=503, detail="V3 workbench frontend has not been built")

@@ -305,6 +305,59 @@ class AuthAndTenancyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "计算额度"):
             self.auth.job_submission_policy(self.owner, "default")
 
+    def test_platform_admin_controls_account_access_sessions_and_global_limits(self) -> None:
+        invitation = self.auth.create_invitation(
+            self.owner,
+            email="managed@example.com",
+            project_id="default",
+            project_role="editor",
+            can_create_projects=True,
+            expires_hours=24,
+            max_uses=1,
+        )
+        session = self.auth.register_with_invitation(
+            code=invitation["code"],
+            email="managed@example.com",
+            name="受管用户",
+            password="correct-horse-battery-staple",
+        )
+        managed = self.auth.principal_from_token(session["session_token"])
+        assert managed
+
+        updated = self.auth.update_admin_user(
+            self.owner,
+            managed.user_id,
+            organization_role="admin",
+            can_create_projects=False,
+            monthly_compute_seconds_limit=0,
+            max_active_jobs=1,
+        )
+        self.assertEqual(updated["organization_role"], "admin")
+        self.assertFalse(updated["can_create_projects"])
+        self.assertEqual(updated["monthly_compute_seconds_limit"], 0)
+        with self.assertRaisesRegex(ValueError, "全平台月计算额度"):
+            self.auth.job_submission_policy(managed, "default")
+
+        self.auth.update_admin_user(self.owner, managed.user_id, monthly_compute_seconds_limit=None)
+        self.jobs.create(
+            "h3.t2v", {}, 100, project_id="default",
+            organization_id=managed.organization_id, created_by=managed.user_id,
+        )
+        with self.assertRaisesRegex(ValueError, "全平台排队任务"):
+            self.auth.job_submission_policy(managed, "default")
+
+        suspended = self.auth.update_admin_user(self.owner, managed.user_id, status="suspended")
+        self.assertEqual(suspended["status"], "suspended")
+        self.assertEqual(suspended["active_sessions"], 0)
+        self.assertIsNone(self.auth.principal_from_token(session["session_token"]))
+        self.assertTrue(any(event["action"] == "admin.user_update" for event in self.auth.list_admin_access_events(self.owner)))
+
+    def test_platform_admin_cannot_lock_out_current_or_local_owner_account(self) -> None:
+        with self.assertRaisesRegex(ValueError, "本机平台主管"):
+            self.auth.update_admin_user(self.owner, self.owner.user_id, status="suspended")
+        with self.assertRaisesRegex(ValueError, "本机平台主管"):
+            self.auth.update_admin_user(self.owner, self.owner.user_id, organization_role="member")
+
 
 if __name__ == "__main__":
     unittest.main()

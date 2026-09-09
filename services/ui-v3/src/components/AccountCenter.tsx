@@ -11,6 +11,7 @@ import {
   Ticket,
   Trash,
   UserCircle,
+  UserCircleGear,
   UsersThree,
   X,
 } from "@phosphor-icons/react";
@@ -61,6 +62,7 @@ export function AccountCenter(props: AccountCenterProps) {
 
   const project = useMemo(() => projects.find((item) => item.id === currentProjectId), [currentProjectId, projects]);
   const isProjectOwner = project?.current_user_role === "owner";
+  const localAdminAvailable = user.is_admin && ["localhost", "127.0.0.1", "::1", "[::1]"].includes(window.location.hostname);
 
   useEffect(() => {
     setDisplayName(user.name);
@@ -218,6 +220,7 @@ export function AccountCenter(props: AccountCenterProps) {
           </div>;
         })}
         <span className="settings-nav-spacer" />
+        {localAdminAvailable ? <button onClick={() => window.location.assign("/v3/admin")}><UserCircleGear />管理后台</button> : null}
         <button className="settings-signout" onClick={() => void props.onLogout()}><SignOut />退出账户</button>
       </nav>
       <main className="account-center-content">

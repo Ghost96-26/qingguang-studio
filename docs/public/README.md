@@ -8,7 +8,7 @@
 
 `Windows` · `RTX 5090` · `Local inference` · `React + Python`
 
-[界面展示](#工作台一览) · [实测视频](#真实生成样片) · [部署指南](DEPLOYMENT.md) · [Agent 部署约定](AGENT-DEPLOYMENT.md)
+[界面展示](#工作台一览) · [实测视频](#真实生成样片) · [部署指南](DEPLOYMENT.md) · [本地管理后台](../local-admin-console.md) · [Agent 部署约定](AGENT-DEPLOYMENT.md)
 
 </div>
 
@@ -28,7 +28,7 @@
 
 **创作流程：** 导入素材 → 连接节点 → 调整镜头与提示词 → 排队生成 → 审片 → 继续创作 / 导出。
 
-项目提供邀请制账户、负责人/制作/审核/查看角色、项目资产分区与用量统计。统一队列串行使用 GPU，避免多个大模型同时争抢显存。
+项目提供邀请制账户、负责人/制作/审核/查看角色、项目资产分区与用量统计。本地管理后台可查看全平台账户、访问记录与资源用量，并控制账户状态、平台角色、项目创建权和跨项目额度。统一队列串行使用 GPU，避免多个大模型同时争抢显存。
 
 ## 工作台一览
 
@@ -111,6 +111,7 @@ flowchart LR
 2. [详细部署指南](DEPLOYMENT.md)：核对硬件、运行栈、模型来源和恢复步骤。
 3. 用 `scripts/initialize_public_config.py` 创建自己的配置，按需下载模型并逐模态验收。
 4. [Agent 部署约定](AGENT-DEPLOYMENT.md)：可直接交给部署 Agent 阅读。
+5. [本地管理后台](../local-admin-console.md)：查看管理范围、安全边界和日常操作。
 
 本机基线：RTX 5090 / 32 GB 显存 / 64 GB RAM；Python 3.12.13 + PyTorch 2.11.0/cu130。默认入口 `127.0.0.1:8090/v3`，ComfyUI 内部端口 8188。
 

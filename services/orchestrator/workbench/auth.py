@@ -139,6 +139,8 @@ class AuthStore:
                     password_hash TEXT,
                     status TEXT NOT NULL DEFAULT 'active',
                     can_create_projects INTEGER NOT NULL DEFAULT 0,
+                    monthly_compute_seconds_limit INTEGER,
+                    max_active_jobs INTEGER NOT NULL DEFAULT 50,
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL,
                     last_login_at TEXT
@@ -279,6 +281,8 @@ class AuthStore:
                     self._ensure_column(connection, table, column, definition)
             self._ensure_column(connection, "users", "avatar_color", "TEXT NOT NULL DEFAULT '#7C8CFF'")
             self._ensure_column(connection, "users", "avatar_image", "TEXT NOT NULL DEFAULT ''")
+            self._ensure_column(connection, "users", "monthly_compute_seconds_limit", "INTEGER")
+            self._ensure_column(connection, "users", "max_active_jobs", "INTEGER NOT NULL DEFAULT 50")
             self._ensure_column(connection, "project_memberships", "monthly_compute_seconds_limit", "INTEGER")
             self._ensure_column(connection, "project_memberships", "max_active_jobs", "INTEGER NOT NULL DEFAULT 50")
             self._ensure_column(connection, "project_memberships", "queue_priority", "INTEGER NOT NULL DEFAULT 3")
@@ -316,7 +320,7 @@ class AuthStore:
                 "SELECT id,?,'owner',?,? FROM projects WHERE owner_user_id=?",
                 (DEFAULT_OWNER_ID, now, now, DEFAULT_OWNER_ID),
             )
-            connection.execute("UPDATE users SET can_create_projects=1 WHERE status='active'")
+            connection.execute("UPDATE users SET can_create_projects=1 WHERE id=?", (DEFAULT_OWNER_ID,))
             connection.execute("UPDATE project_groups SET owner_user_id=? WHERE owner_user_id IS NULL", (DEFAULT_OWNER_ID,))
             connection.execute("DELETE FROM sessions WHERE expires_at < ? OR revoked_at IS NOT NULL", (now,))
             connection.execute("DELETE FROM download_grants WHERE expires_at < ? OR revoked_at IS NOT NULL", (now,))
@@ -377,20 +381,32 @@ class AuthStore:
 
     def principal_from_token(self, token: str) -> Principal | None:
         now = utc_now()
-        with self.connect() as connection:
+        with self._write_lock, self.connect() as connection:
             session = connection.execute(
                 "SELECT * FROM sessions WHERE token_hash=? AND revoked_at IS NULL AND expires_at>?",
                 (_digest(token), now),
             ).fetchone()
             if not session:
                 return None
+            try:
+                last_seen = datetime.fromisoformat(str(session["last_seen_at"]))
+                if datetime.now(timezone.utc) - last_seen.astimezone(timezone.utc) >= timedelta(minutes=5):
+                    connection.execute("UPDATE sessions SET last_seen_at=? WHERE id=?", (now, session["id"]))
+                    session = connection.execute("SELECT * FROM sessions WHERE id=?", (session["id"],)).fetchone()
+            except (TypeError, ValueError):
+                connection.execute("UPDATE sessions SET last_seen_at=? WHERE id=?", (now, session["id"]))
+                session = connection.execute("SELECT * FROM sessions WHERE id=?", (session["id"],)).fetchone()
             return self._principal_for_user(connection, session["user_id"], session=session)
 
     def authenticate(self, email: str, password: str, *, user_agent: str = "", ip_address: str = "") -> dict[str, Any]:
         with self.connect() as connection:
-            row = connection.execute("SELECT id,password_hash,status FROM users WHERE email=? COLLATE NOCASE", (email.strip(),)).fetchone()
+            row = connection.execute(
+                "SELECT u.id,u.password_hash,u.status,m.organization_id FROM users u "
+                "LEFT JOIN organization_memberships m ON m.user_id=u.id WHERE u.email=? COLLATE NOCASE LIMIT 1",
+                (email.strip(),),
+            ).fetchone()
         if not row or row["status"] != "active" or not verify_password(password, row["password_hash"]):
-            self.audit(None, None, "auth.login_failed", "user", email.strip().lower(), {}, ip_address)
+            self.audit(row["organization_id"] if row else None, row["id"] if row else None, "auth.login_failed", "user", email.strip().lower(), {}, ip_address)
             raise ValueError("邮箱或密码不正确")
         return self.create_session(row["id"], user_agent=user_agent, ip_address=ip_address)
 
@@ -399,6 +415,10 @@ class AuthStore:
         now = utc_now()
         with self._write_lock, self.connect() as connection:
             connection.execute("UPDATE users SET password_hash=?,updated_at=? WHERE id=?", (encoded, now, principal.user_id))
+            connection.execute(
+                "UPDATE sessions SET revoked_at=? WHERE user_id=? AND revoked_at IS NULL AND id<>?",
+                (now, principal.user_id, principal.session_id or ""),
+            )
             self._write_audit(connection, principal.organization_id, principal.user_id, "auth.password_set", "user", principal.user_id, {})
 
     def update_profile(self, principal: Principal, *, name: str | None = None, avatar_color: str | None = None, avatar_image: str | None = None) -> dict[str, Any]:
@@ -826,9 +846,10 @@ class AuthStore:
     def job_submission_policy(self, principal: Principal, project_id: str, *, connection: sqlite3.Connection | None = None) -> dict[str, Any]:
         with (nullcontext(connection) if connection is not None else self.connect()) as connection:
             member = connection.execute(
-                "SELECT pm.*,p.monthly_compute_seconds_limit AS project_limit,p.max_active_jobs AS project_max "
-                "FROM project_memberships pm JOIN projects p ON p.id=pm.project_id "
-                "WHERE pm.project_id=? AND pm.user_id=? AND p.organization_id=? AND p.deleted_at IS NULL",
+                "SELECT pm.*,p.monthly_compute_seconds_limit AS project_limit,p.max_active_jobs AS project_max,"
+                "u.monthly_compute_seconds_limit AS account_limit,u.max_active_jobs AS account_max "
+                "FROM project_memberships pm JOIN projects p ON p.id=pm.project_id JOIN users u ON u.id=pm.user_id "
+                "WHERE pm.project_id=? AND pm.user_id=? AND p.organization_id=? AND p.deleted_at IS NULL AND u.status='active'",
                 (project_id, principal.user_id, principal.organization_id),
             ).fetchone()
             if not member or PROJECT_ROLE_RANK.get(str(member["role"]), 0) < PROJECT_ROLE_RANK["editor"]:
@@ -841,6 +862,10 @@ class AuthStore:
                 "SELECT COUNT(*) AS count FROM jobs WHERE project_id=? AND status IN ('queued','running')",
                 (project_id,),
             ).fetchone()["count"]
+            account_active = connection.execute(
+                "SELECT COUNT(*) AS count FROM jobs WHERE organization_id=? AND created_by=? AND status IN ('queued','running')",
+                (principal.organization_id, principal.user_id),
+            ).fetchone()["count"]
             member_seconds = connection.execute(
                 "SELECT COALESCE(SUM(MAX(0,(julianday(COALESCE(finished_at,CURRENT_TIMESTAMP))-julianday(started_at))*86400.0)),0) AS seconds "
                 "FROM jobs WHERE project_id=? AND created_by=? AND started_at IS NOT NULL AND date(started_at,'+8 hours')>=date('now','+8 hours','start of month')",
@@ -851,12 +876,22 @@ class AuthStore:
                 "FROM jobs WHERE project_id=? AND started_at IS NOT NULL AND date(started_at,'+8 hours')>=date('now','+8 hours','start of month')",
                 (project_id,),
             ).fetchone()["seconds"]
+            account_seconds = connection.execute(
+                "SELECT COALESCE(SUM(MAX(0,(julianday(COALESCE(finished_at,CURRENT_TIMESTAMP))-julianday(started_at))*86400.0)),0) AS seconds "
+                "FROM jobs WHERE organization_id=? AND created_by=? AND started_at IS NOT NULL "
+                "AND date(started_at,'+8 hours')>=date('now','+8 hours','start of month')",
+                (principal.organization_id, principal.user_id),
+            ).fetchone()["seconds"]
+        if account_active >= int(member["account_max"] or 50):
+            raise ValueError("你的全平台排队任务已达到管理员设置的上限")
         if member_active >= int(member["max_active_jobs"] or 50):
             raise ValueError("你在该项目的排队任务已达到负责人设置的上限")
         if project_active >= int(member["project_max"] or 50):
             raise ValueError("当前项目排队任务已达到上限")
         if member["monthly_compute_seconds_limit"] is not None and float(member_seconds) >= int(member["monthly_compute_seconds_limit"]):
             raise ValueError("你本月的项目计算额度已用完")
+        if member["account_limit"] is not None and float(account_seconds) >= int(member["account_limit"]):
+            raise ValueError("你的全平台月计算额度已用完")
         if member["project_limit"] is not None and float(project_seconds) >= int(member["project_limit"]):
             raise ValueError("当前项目本月计算额度已用完")
         queue_priority = max(1, min(5, int(member["queue_priority"] or 3)))
@@ -865,7 +900,9 @@ class AuthStore:
             "queue_priority": queue_priority,
             "member_active_jobs": int(member_active),
             "project_active_jobs": int(project_active),
+            "account_active_jobs": int(account_active),
             "month_compute_seconds": round(float(member_seconds or 0), 3),
+            "account_month_compute_seconds": round(float(account_seconds or 0), 3),
         }
 
     def create_download_grant(self, principal: Principal, asset_id: str, *, minutes: int = 15) -> dict[str, Any]:
@@ -971,6 +1008,239 @@ class AuthStore:
                 raise PermissionError("无权完成该上传任务")
             connection.execute("UPDATE upload_sessions SET status='completed',completed_at=? WHERE id=?", (now, upload_id))
             self._write_audit(connection, principal.organization_id, principal.user_id, "upload.complete", "asset", asset_id, {"upload_id": upload_id})
+
+    @staticmethod
+    def _require_platform_admin(principal: Principal) -> None:
+        if not principal.is_admin:
+            raise PermissionError("只有组织管理员可以管理平台账户")
+
+    def list_admin_users(self, principal: Principal, *, days: int = 30) -> list[dict[str, Any]]:
+        self._require_platform_admin(principal)
+        period_offset = f"-{max(1, min(days, 365)) - 1} days"
+        elapsed = "MAX(0,(julianday(COALESCE(finished_at,CURRENT_TIMESTAMP))-julianday(started_at))*86400.0)"
+        with self.connect() as connection:
+            users = connection.execute(
+                "SELECT u.id,u.email,u.name,u.status,u.can_create_projects,u.avatar_color,u.avatar_image,"
+                "u.monthly_compute_seconds_limit,u.max_active_jobs,u.created_at,u.updated_at,u.last_login_at,"
+                "m.role AS organization_role FROM users u JOIN organization_memberships m ON m.user_id=u.id "
+                "WHERE m.organization_id=? ORDER BY CASE u.status WHEN 'active' THEN 0 ELSE 1 END,u.name COLLATE NOCASE",
+                (principal.organization_id,),
+            ).fetchall()
+            result: list[dict[str, Any]] = []
+            for row in users:
+                item = dict(row)
+                item["can_create_projects"] = bool(item["can_create_projects"])
+                item["is_current_user"] = item["id"] == principal.user_id
+                memberships = connection.execute(
+                    "SELECT p.id AS project_id,p.name AS project_name,p.project_kind,pm.role,"
+                    "pm.monthly_compute_seconds_limit,pm.max_active_jobs,pm.queue_priority "
+                    "FROM project_memberships pm JOIN projects p ON p.id=pm.project_id "
+                    "WHERE pm.user_id=? AND p.organization_id=? AND p.deleted_at IS NULL ORDER BY p.name COLLATE NOCASE",
+                    (item["id"], principal.organization_id),
+                ).fetchall()
+                item["projects"] = [dict(member) for member in memberships]
+                usage = connection.execute(
+                    f"SELECT COUNT(*) AS job_count,COALESCE(SUM(CASE WHEN started_at IS NOT NULL THEN {elapsed} ELSE 0 END),0) AS compute_seconds,"
+                    "SUM(CASE WHEN status='succeeded' THEN 1 ELSE 0 END) AS succeeded_jobs,"
+                    "SUM(CASE WHEN status IN ('failed','cancelled') THEN 1 ELSE 0 END) AS failed_jobs,"
+                    "SUM(CASE WHEN status IN ('queued','running') THEN 1 ELSE 0 END) AS queued_jobs "
+                    "FROM jobs WHERE organization_id=? AND created_by=? AND date(created_at,'+8 hours')>=date('now','+8 hours',?)",
+                    (principal.organization_id, item["id"], period_offset),
+                ).fetchone()
+                storage = connection.execute(
+                    "SELECT COALESCE(SUM(size_bytes),0) AS storage_bytes FROM assets WHERE organization_id=? AND created_by=?",
+                    (principal.organization_id, item["id"]),
+                ).fetchone()
+                sessions = connection.execute(
+                    "SELECT id,ip_address,user_agent,created_at,expires_at,last_seen_at,revoked_at,"
+                    "CASE WHEN revoked_at IS NULL AND expires_at>? THEN 1 ELSE 0 END AS active "
+                    "FROM sessions WHERE user_id=? ORDER BY created_at DESC LIMIT 5",
+                    (utc_now(), item["id"]),
+                ).fetchall()
+                active_session_count = connection.execute(
+                    "SELECT COUNT(*) AS count FROM sessions WHERE user_id=? AND revoked_at IS NULL AND expires_at>?",
+                    (item["id"], utc_now()),
+                ).fetchone()
+                item["usage"] = {
+                    "compute_seconds": round(float(usage["compute_seconds"] or 0), 3),
+                    "job_count": int(usage["job_count"] or 0),
+                    "succeeded_jobs": int(usage["succeeded_jobs"] or 0),
+                    "failed_jobs": int(usage["failed_jobs"] or 0),
+                    "queued_jobs": int(usage["queued_jobs"] or 0),
+                    "storage_bytes": int(storage["storage_bytes"] or 0),
+                }
+                item["recent_sessions"] = [{**dict(session), "active": bool(session["active"])} for session in sessions]
+                item["active_sessions"] = int(active_session_count["count"] or 0)
+                result.append(item)
+        return result
+
+    def admin_overview(self, principal: Principal, *, days: int = 30) -> dict[str, Any]:
+        users = self.list_admin_users(principal, days=days)
+        period_offset = f"-{max(1, min(days, 365)) - 1} days"
+        elapsed = "MAX(0,(julianday(COALESCE(finished_at,CURRENT_TIMESTAMP))-julianday(started_at))*86400.0)"
+        with self.connect() as connection:
+            projects = connection.execute(
+                "SELECT COUNT(*) AS count FROM projects WHERE organization_id=? AND deleted_at IS NULL",
+                (principal.organization_id,),
+            ).fetchone()
+            jobs = connection.execute(
+                f"SELECT COUNT(*) AS job_count,COALESCE(SUM(CASE WHEN started_at IS NOT NULL THEN {elapsed} ELSE 0 END),0) AS compute_seconds,"
+                "SUM(CASE WHEN status IN ('queued','running') THEN 1 ELSE 0 END) AS queued_jobs "
+                "FROM jobs WHERE organization_id=? AND date(created_at,'+8 hours')>=date('now','+8 hours',?)",
+                (principal.organization_id, period_offset),
+            ).fetchone()
+            storage = connection.execute(
+                "SELECT COALESCE(SUM(size_bytes),0) AS storage_bytes FROM assets WHERE organization_id=?",
+                (principal.organization_id,),
+            ).fetchone()
+            daily = connection.execute(
+                f"SELECT date(created_at,'+8 hours') AS day,COUNT(*) AS jobs,"
+                f"COALESCE(SUM(CASE WHEN started_at IS NOT NULL THEN {elapsed} ELSE 0 END),0) AS compute_seconds "
+                "FROM jobs WHERE organization_id=? AND date(created_at,'+8 hours')>=date('now','+8 hours',?) "
+                "GROUP BY date(created_at,'+8 hours') ORDER BY day",
+                (principal.organization_id, period_offset),
+            ).fetchall()
+            active_invitations = connection.execute(
+                "SELECT COUNT(*) AS count FROM invitations WHERE organization_id=? AND revoked_at IS NULL AND expires_at>? AND use_count<max_uses",
+                (principal.organization_id, utc_now()),
+            ).fetchone()
+        return {
+            "period_days": max(1, min(days, 365)),
+            "users": len(users),
+            "active_users": sum(1 for user in users if user["status"] == "active"),
+            "suspended_users": sum(1 for user in users if user["status"] != "active"),
+            "active_sessions": sum(int(user["active_sessions"]) for user in users),
+            "projects": int(projects["count"] or 0),
+            "active_invitations": int(active_invitations["count"] or 0),
+            "job_count": int(jobs["job_count"] or 0),
+            "queued_jobs": int(jobs["queued_jobs"] or 0),
+            "compute_seconds": round(float(jobs["compute_seconds"] or 0), 3),
+            "storage_bytes": int(storage["storage_bytes"] or 0),
+            "daily": [dict(row) for row in daily],
+        }
+
+    def update_admin_user(
+        self,
+        principal: Principal,
+        user_id: str,
+        *,
+        status: str | None = None,
+        organization_role: str | None = None,
+        can_create_projects: bool | None = None,
+        monthly_compute_seconds_limit: int | None | object = ...,
+        max_active_jobs: int | None = None,
+    ) -> dict[str, Any]:
+        self._require_platform_admin(principal)
+        if status is not None and status not in {"active", "suspended"}:
+            raise ValueError("无效的账户状态")
+        if organization_role is not None and organization_role not in {"member", "admin", "owner"}:
+            raise ValueError("无效的平台角色")
+        if monthly_compute_seconds_limit is not ... and monthly_compute_seconds_limit is not None and int(monthly_compute_seconds_limit) < 0:
+            raise ValueError("账户月额度不能为负数")
+        if max_active_jobs is not None and not 1 <= int(max_active_jobs) <= 500:
+            raise ValueError("账户排队任务上限应在1到500之间")
+        if user_id == DEFAULT_OWNER_ID and (status == "suspended" or organization_role not in {None, "owner"}):
+            raise ValueError("本机平台主管必须保持启用和负责人角色")
+        if user_id == principal.user_id and (status == "suspended" or organization_role not in {None, "admin", "owner"}):
+            raise ValueError("不能暂停当前账户或移除自己的管理权限")
+        now = utc_now()
+        with self._write_lock, self.connect() as connection:
+            current = connection.execute(
+                "SELECT u.status,m.role FROM users u JOIN organization_memberships m ON m.user_id=u.id "
+                "WHERE u.id=? AND m.organization_id=?",
+                (user_id, principal.organization_id),
+            ).fetchone()
+            if not current:
+                raise ValueError("账户不存在")
+            removing_owner = current["role"] == "owner" and (status == "suspended" or organization_role not in {None, "owner"})
+            if removing_owner:
+                remaining = connection.execute(
+                    "SELECT COUNT(*) AS count FROM organization_memberships m JOIN users u ON u.id=m.user_id "
+                    "WHERE m.organization_id=? AND m.role='owner' AND u.status='active' AND u.id<>?",
+                    (principal.organization_id, user_id),
+                ).fetchone()["count"]
+                if remaining < 1:
+                    raise ValueError("平台必须保留至少一名启用的负责人")
+            user_assignments: list[str] = []
+            values: list[Any] = []
+            if status is not None:
+                user_assignments.append("status=?")
+                values.append(status)
+            if can_create_projects is not None:
+                user_assignments.append("can_create_projects=?")
+                values.append(int(can_create_projects))
+            if monthly_compute_seconds_limit is not ...:
+                user_assignments.append("monthly_compute_seconds_limit=?")
+                values.append(monthly_compute_seconds_limit)
+            if max_active_jobs is not None:
+                user_assignments.append("max_active_jobs=?")
+                values.append(int(max_active_jobs))
+            if user_assignments:
+                user_assignments.append("updated_at=?")
+                values.extend([now, user_id])
+                connection.execute(f"UPDATE users SET {','.join(user_assignments)} WHERE id=?", values)
+            if organization_role is not None:
+                connection.execute(
+                    "UPDATE organization_memberships SET role=? WHERE organization_id=? AND user_id=?",
+                    (organization_role, principal.organization_id, user_id),
+                )
+            if status == "suspended":
+                connection.execute("UPDATE sessions SET revoked_at=? WHERE user_id=? AND revoked_at IS NULL", (now, user_id))
+                connection.execute("UPDATE upload_sessions SET status='revoked' WHERE created_by=? AND status='open'", (user_id,))
+                connection.execute("UPDATE download_grants SET revoked_at=? WHERE created_by=? AND revoked_at IS NULL", (now, user_id))
+            self._write_audit(
+                connection,
+                principal.organization_id,
+                principal.user_id,
+                "admin.user_update",
+                "user",
+                user_id,
+                {
+                    "status": status,
+                    "organization_role": organization_role,
+                    "can_create_projects": can_create_projects,
+                    "monthly_compute_seconds_limit": None if monthly_compute_seconds_limit is ... else monthly_compute_seconds_limit,
+                    "max_active_jobs": max_active_jobs,
+                },
+            )
+        return next(user for user in self.list_admin_users(principal) if user["id"] == user_id)
+
+    def revoke_admin_user_sessions(self, principal: Principal, user_id: str) -> int:
+        self._require_platform_admin(principal)
+        now = utc_now()
+        with self._write_lock, self.connect() as connection:
+            exists = connection.execute(
+                "SELECT 1 FROM organization_memberships WHERE organization_id=? AND user_id=?",
+                (principal.organization_id, user_id),
+            ).fetchone()
+            if not exists:
+                raise ValueError("账户不存在")
+            if user_id == principal.user_id and principal.session_id:
+                cursor = connection.execute(
+                    "UPDATE sessions SET revoked_at=? WHERE user_id=? AND revoked_at IS NULL AND id<>?",
+                    (now, user_id, principal.session_id),
+                )
+            else:
+                cursor = connection.execute("UPDATE sessions SET revoked_at=? WHERE user_id=? AND revoked_at IS NULL", (now, user_id))
+            self._write_audit(connection, principal.organization_id, principal.user_id, "admin.sessions_revoke", "user", user_id, {"count": cursor.rowcount})
+        return int(cursor.rowcount)
+
+    def list_admin_access_events(self, principal: Principal, *, limit: int = 200) -> list[dict[str, Any]]:
+        self._require_platform_admin(principal)
+        with self.connect() as connection:
+            rows = connection.execute(
+                "SELECT a.id,a.user_id,a.action,a.target_type,a.target_id,a.detail_json,a.ip_address,a.created_at,"
+                "u.name AS user_name,u.email AS user_email FROM audit_logs a LEFT JOIN users u ON u.id=a.user_id "
+                "WHERE a.organization_id=? AND (a.action LIKE 'auth.%' OR a.action LIKE 'admin.%') "
+                "ORDER BY a.id DESC LIMIT ?",
+                (principal.organization_id, max(1, min(limit, 1000))),
+            ).fetchall()
+        events: list[dict[str, Any]] = []
+        for row in rows:
+            item = dict(row)
+            item["detail"] = json.loads(item.pop("detail_json") or "{}")
+            events.append(item)
+        return events
 
     @staticmethod
     def _write_audit(

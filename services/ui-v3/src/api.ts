@@ -1,4 +1,4 @@
-import type { Asset, AssetFolder, AuthSession, AuthUser, Capabilities, Invitation, Job, LegacyCanvasState, Project, ProjectGroup, ProjectMember, ProjectUsage, UsageSummary } from "./types";
+import type { AdminAccessEvent, AdminOverview, AdminUser, Asset, AssetFolder, AuthSession, AuthUser, Capabilities, Invitation, Job, LegacyCanvasState, Project, ProjectGroup, ProjectMember, ProjectUsage, UsageSummary } from "./types";
 import type { H3IRPreview } from "./h3-director";
 import type { AgentRequest, ProductionRun } from "./storyboard";
 
@@ -73,6 +73,11 @@ export const workbenchApi = {
   removeProjectMember: (projectId: string, userId: string) => api<void>(`/v1/projects/${encodeURIComponent(projectId)}/members/${encodeURIComponent(userId)}`, { method: "DELETE" }),
   accountUsage: () => api<UsageSummary>("/v1/account/usage"),
   projectUsage: (projectId: string) => api<ProjectUsage>(`/v1/projects/${encodeURIComponent(projectId)}/usage`),
+  adminOverview: (days = 30) => api<AdminOverview>(`/v1/admin/overview?days=${days}`),
+  adminUsers: (days = 30) => api<AdminUser[]>(`/v1/admin/users?days=${days}`),
+  updateAdminUser: (userId: string, patch: { status?: AdminUser["status"]; organization_role?: AdminUser["organization_role"]; can_create_projects?: boolean; monthly_compute_minutes_limit?: number | null; max_active_jobs?: number }) => api<AdminUser>(`/v1/admin/users/${encodeURIComponent(userId)}`, { method: "PATCH", body: JSON.stringify(patch) }),
+  revokeAdminUserSessions: (userId: string) => api<{ revoked_sessions: number }>(`/v1/admin/users/${encodeURIComponent(userId)}/sessions/revoke`, { method: "POST" }),
+  adminAccessEvents: (limit = 200) => api<AdminAccessEvent[]>(`/v1/admin/access-events?limit=${limit}`),
   compileH3: (params: Record<string, unknown>) => api<H3IRPreview>("/v1/h3/compile", { method: "POST", body: JSON.stringify({ params }) }),
   capabilities: () => api<Capabilities>("/v1/capabilities"),
   projects: (includeDeleted = false) => api<Project[]>(`/v1/projects${includeDeleted ? "?include_deleted=true" : ""}`),

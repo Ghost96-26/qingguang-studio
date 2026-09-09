@@ -37,6 +37,7 @@ $arguments = @(
     "--app-dir", $appRoot,
     "--host", [string]$config.listen,
     "--port", [string]$config.port,
+    "--forwarded-allow-ips", "127.0.0.1",
     "--no-access-log"
 )
 if ($Foreground) {

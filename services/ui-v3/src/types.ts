@@ -138,6 +138,76 @@ export interface ProjectUsage {
   };
 }
 
+export interface AdminSession {
+  id: string;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
+  expires_at: string;
+  last_seen_at: string;
+  revoked_at?: string | null;
+  active: boolean;
+}
+
+export interface AdminUserProject {
+  project_id: string;
+  project_name: string;
+  project_kind?: string;
+  role: "viewer" | "reviewer" | "editor" | "owner";
+  monthly_compute_seconds_limit?: number | null;
+  max_active_jobs?: number;
+  queue_priority?: number;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  status: "active" | "suspended";
+  organization_role: "member" | "admin" | "owner";
+  can_create_projects: boolean;
+  monthly_compute_seconds_limit?: number | null;
+  max_active_jobs: number;
+  created_at: string;
+  updated_at: string;
+  last_login_at?: string | null;
+  avatar_color?: string;
+  avatar_image?: string;
+  is_current_user: boolean;
+  active_sessions: number;
+  projects: AdminUserProject[];
+  recent_sessions: AdminSession[];
+  usage: Omit<UsageSummary, "daily">;
+}
+
+export interface AdminOverview {
+  period_days: number;
+  users: number;
+  active_users: number;
+  suspended_users: number;
+  active_sessions: number;
+  projects: number;
+  active_invitations: number;
+  job_count: number;
+  queued_jobs: number;
+  compute_seconds: number;
+  storage_bytes: number;
+  daily: UsageDay[];
+}
+
+export interface AdminAccessEvent {
+  id: number;
+  user_id?: string | null;
+  user_name?: string | null;
+  user_email?: string | null;
+  action: string;
+  target_type?: string | null;
+  target_id?: string | null;
+  ip_address?: string | null;
+  created_at: string;
+  detail: Record<string, unknown>;
+}
+
 export interface ProjectGroup {
   id: string;
   name: string;

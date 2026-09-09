@@ -1,7 +1,7 @@
 {
-  "date": "2026-09-06",
-  "files": 153,
-  "bytes": 2546671,
+  "date": "2026-09-09",
+  "files": 159,
+  "bytes": 2632190,
   "findings": [],
   "scope": "allowlisted source plus SHA256-reviewed showcase; exact local secret comparison and pattern scan",
   "inventory": [
@@ -91,9 +91,19 @@
       "sha256": "ba0ece0eb11afef9acb4f2f75b2e97c953d5b7875a57b05a6086b3f36268afe2"
     },
     {
+      "path": "15_Open_Local_Admin_Console.cmd",
+      "bytes": 548,
+      "sha256": "cf23eefd3fbf6979c61c90921f1c63707c7c3c659d433f3a0737e234a78502f3"
+    },
+    {
       "path": "AGENTS.md",
       "bytes": 2526,
       "sha256": "a3d577ca8ffea17292c42a93a826379f4f92b87cfaf71001e2abbb08730a158d"
+    },
+    {
+      "path": "README.md",
+      "bytes": 7115,
+      "sha256": "f311510f20c3a6172a153c4ce222772f7b1855edc46a4ebe640c0c1b441bacc2"
     },
     {
       "path": "config/indextts-py312-requirements.txt",
@@ -146,9 +156,39 @@
       "sha256": "f55f52f0b3c49bb5422a7e007c8c0b61b1f661dfd5561b3e13dc0a116383eaa9"
     },
     {
+      "path": "docs/local-admin-console.md",
+      "bytes": 3508,
+      "sha256": "29a04eda8efae623a963a43a2f8041b9aa50fbed22d62f9469d821cf40786022"
+    },
+    {
       "path": "docs/public/AGENT-DEPLOYMENT.md",
       "bytes": 2526,
       "sha256": "a3d577ca8ffea17292c42a93a826379f4f92b87cfaf71001e2abbb08730a158d"
+    },
+    {
+      "path": "docs/public/DEPLOYMENT.md",
+      "bytes": 16114,
+      "sha256": "bdca6aea87e76fb55698ce9836664628d5f98725af07cb3b129d4ef1697e80aa"
+    },
+    {
+      "path": "docs/public/PROJECT-STATUS.md",
+      "bytes": 7381,
+      "sha256": "c29c465b04a97b95a840ff71e3b2215f30cedf8546f24246f005454cb85b51ec"
+    },
+    {
+      "path": "docs/public/PUBLISHING.md",
+      "bytes": 4381,
+      "sha256": "8aed6786a1f25d0676eeb453d3e832773d1921e02457638fee395afc66def3ed"
+    },
+    {
+      "path": "docs/public/README.md",
+      "bytes": 6935,
+      "sha256": "fc1c01032fa46beab171aa4a5f01ad31c300dda565eb77ea186c823cbf79502a"
+    },
+    {
+      "path": "docs/public/RELEASE-VALIDATION.md",
+      "bytes": 1430,
+      "sha256": "783887dc58f30ecd15a180280b5097e968bc3c0899325d470d11da12a24e705b"
     },
     {
       "path": "docs/public/assets/asset-library.png",
@@ -179,41 +219,6 @@
       "path": "docs/public/assets/model-panel.png",
       "bytes": 77428,
       "sha256": "bceb072ecfb31aa9542ee79df913773a070e479268dff8f7f5e71ee737a35ba3"
-    },
-    {
-      "path": "docs/public/DEPLOYMENT.md",
-      "bytes": 16114,
-      "sha256": "bdca6aea87e76fb55698ce9836664628d5f98725af07cb3b129d4ef1697e80aa"
-    },
-    {
-      "path": "docs/public/PROJECT-STATUS.md",
-      "bytes": 7381,
-      "sha256": "c29c465b04a97b95a840ff71e3b2215f30cedf8546f24246f005454cb85b51ec"
-    },
-    {
-      "path": "docs/public/PUBLISHING.md",
-      "bytes": 4381,
-      "sha256": "8aed6786a1f25d0676eeb453d3e832773d1921e02457638fee395afc66def3ed"
-    },
-    {
-      "path": "docs/public/README.md",
-      "bytes": 6629,
-      "sha256": "1de9a22fca64f98991036083dbbe19a5f1b9a676a6d11826cf926d81cb2c2f34"
-    },
-    {
-      "path": "docs/public/RELEASE-VALIDATION.md",
-      "bytes": 1430,
-      "sha256": "783887dc58f30ecd15a180280b5097e968bc3c0899325d470d11da12a24e705b"
-    },
-    {
-      "path": "README.md",
-      "bytes": 6809,
-      "sha256": "dc88f564c9621472d352b4abd8b83e3722a801fc744c88c5564c0d4eb3255af5"
-    },
-    {
-      "path": "scripts/check_public_repository.py",
-      "bytes": 4839,
-      "sha256": "40b4f18d4066e98d4f970c02f9e1942450a4f5727a664bccc2a368d4379c24d0"
     },
     {
       "path": "scripts/Common-H3Runtime.ps1",
@@ -251,24 +256,19 @@
       "sha256": "47f3b7da54d7694f74d3734a042643d1ee3166364d23cb5a45a203bfc333debb"
     },
     {
-      "path": "scripts/export_public_repository.py",
-      "bytes": 6120,
-      "sha256": "49b287604c81144cd9ab9e2ad305e13293cc14392452b775ab5fd8e5fb71751d"
-    },
-    {
       "path": "scripts/Initialize-GatewaySecrets.ps1",
       "bytes": 762,
       "sha256": "c78cca38de1055ae72011241db84d3a95514295c495fbbad132ddebd9738ef55"
     },
     {
-      "path": "scripts/initialize_public_config.py",
-      "bytes": 2484,
-      "sha256": "011b221be0d72d574b5c64e8298739daf0f4946260a05237fb48219dd74c0df8"
-    },
-    {
       "path": "scripts/Install-H3Runtime.ps1",
       "bytes": 1237,
       "sha256": "8763b80c9fff558c14b3efddcfec4561468945e197ac056489eda35eb4783c86"
+    },
+    {
+      "path": "scripts/Open-AdminConsole.ps1",
+      "bytes": 686,
+      "sha256": "175e18496a9b676da97f0ea5a9c109a9fd50ab662a6ed7327016922a9516addb"
     },
     {
       "path": "scripts/Open-H3Workbench.ps1",
@@ -292,8 +292,8 @@
     },
     {
       "path": "scripts/Start-WorkbenchGateway.ps1",
-      "bytes": 3071,
-      "sha256": "824c6c62bf006ccfab70e54569dcb3f9e0bdb0cd4250bf64a5a5c45e130ba9c5"
+      "bytes": 3113,
+      "sha256": "b0d654f2e8c31ea7f3dd35b43e7022a2beefd50c2a95637b6a3fe2c60efdc174"
     },
     {
       "path": "scripts/Stop-H3Runtime.ps1",
@@ -314,6 +314,21 @@
       "path": "scripts/Test-Workbench.ps1",
       "bytes": 1750,
       "sha256": "a77bbd151da129a3cf7cff99b562a2ef6f872a77d1ef051a85dcb8e994e57d59"
+    },
+    {
+      "path": "scripts/check_public_repository.py",
+      "bytes": 5093,
+      "sha256": "db1ee3b783416ca1402edc0c376ccf74ee103501725acd670e100bdd3f8e7b1c"
+    },
+    {
+      "path": "scripts/export_public_repository.py",
+      "bytes": 6193,
+      "sha256": "49a83b1149bcd010961641cb3a9a70ea33889f4a4f699e4883d689f9a5abbc80"
+    },
+    {
+      "path": "scripts/initialize_public_config.py",
+      "bytes": 2484,
+      "sha256": "011b221be0d72d574b5c64e8298739daf0f4946260a05237fb48219dd74c0df8"
     },
     {
       "path": "services/adapters/run_hunyuanvideo_foley.py",
@@ -347,13 +362,13 @@
     },
     {
       "path": "services/orchestrator/tests/test_account_http.py",
-      "bytes": 8146,
-      "sha256": "dfb9863c1a5dccd27199e7d7cbb455eb5f751ec196c9f84a613850dec41fa566"
+      "bytes": 10416,
+      "sha256": "df0b1dbefdb1ba117ea6c3440773a8da8dc7c0a0924a7fad463c1129bb1169d2"
     },
     {
       "path": "services/orchestrator/tests/test_auth_and_tenancy.py",
-      "bytes": 14249,
-      "sha256": "c4d5b5dd604e0028fa1aa74a83df58bd6efa1528b16f25e2ec77d38d59106510"
+      "bytes": 16816,
+      "sha256": "7a26e33027a7e01102aab85c090a3b9002059164070f96bafee8390ad8052a4d"
     },
     {
       "path": "services/orchestrator/tests/test_h3_ir.py",
@@ -364,6 +379,11 @@
       "path": "services/orchestrator/tests/test_project_and_h3_contracts.py",
       "bytes": 11123,
       "sha256": "1c2f91148c9ab607e1e87bbf87d80283efc7a455738bfe6dc16e41a1aee9f31c"
+    },
+    {
+      "path": "services/orchestrator/tests/test_public_boundary.py",
+      "bytes": 5249,
+      "sha256": "c9de8d36fcc1b8b8f5364a413861d04cb9150c0cb13a2318af2b9a783063baaf"
     },
     {
       "path": "services/orchestrator/tests/test_storyboard_production.py",
@@ -387,13 +407,13 @@
     },
     {
       "path": "services/orchestrator/workbench/api.py",
-      "bytes": 55917,
-      "sha256": "03e66cb9a56b79e218723823090b8ec7c0ab92d3088ab48acfcc92588e51cf78"
+      "bytes": 61713,
+      "sha256": "4d794f2787eff498301b2a0277be8f60a32bdb2a12f160fb974d8c189867f149"
     },
     {
       "path": "services/orchestrator/workbench/auth.py",
-      "bytes": 53723,
-      "sha256": "7d9509d21f27dca76e7e06ecca91725327df169017e83a8468b2b117b1f202ee"
+      "bytes": 70883,
+      "sha256": "6db5ed7ffcb64b012b37f1940a9a1ff7b05b52df94a0bbfa98ef0993bf369a3a"
     },
     {
       "path": "services/orchestrator/workbench/avatars.py",
@@ -402,8 +422,8 @@
     },
     {
       "path": "services/orchestrator/workbench/config.py",
-      "bytes": 1054,
-      "sha256": "1f514f98f7ab1f32b66c78d490c6f6172e6ecb66070c8cd0a3130e61b68cbaf4"
+      "bytes": 1297,
+      "sha256": "53af40686c3f99c636ce157ea94f12434132456210ca9f0f2faf41c01eefe0c5"
     },
     {
       "path": "services/orchestrator/workbench/h3_ir.py",
@@ -429,6 +449,11 @@
       "path": "services/orchestrator/workbench/providers.py",
       "bytes": 73367,
       "sha256": "a1a0a8e8b345ff4b9019f18289b0cbf9d48e5d6b260697cc2fdea55c540642b1"
+    },
+    {
+      "path": "services/orchestrator/workbench/request_security.py",
+      "bytes": 2035,
+      "sha256": "9d5e285af19abe6d028a87b41da4ec5a13f520a2c9b644a7655ac70cd3a46083"
     },
     {
       "path": "services/orchestrator/workbench/sampling.py",
@@ -466,31 +491,6 @@
       "sha256": "7b4e0e43343dd052a0dbc80f71348256e9fabde7fecce63d11564ad013c2ed61"
     },
     {
-      "path": "services/ui/app.js",
-      "bytes": 35992,
-      "sha256": "44a14f668d49d3e162f40183d10441243b17922b275b218130b68c85ee1dc7f7"
-    },
-    {
-      "path": "services/ui/canvas-v2.css",
-      "bytes": 11558,
-      "sha256": "d4dcb0e92540be592320f6bc478c65122a78e8318ef498f6d704280949a32457"
-    },
-    {
-      "path": "services/ui/canvas-v2.js",
-      "bytes": 63974,
-      "sha256": "d3d650b0bc134451b464c6d1b971392d56bc250d84807df3d91a3b58d2ee6d9c"
-    },
-    {
-      "path": "services/ui/index.html",
-      "bytes": 9634,
-      "sha256": "ad41527b2106ed4276829f49cf488a572b8931b8b7c3a00fea24cbe3543e582f"
-    },
-    {
-      "path": "services/ui/styles.css",
-      "bytes": 14179,
-      "sha256": "f97b1c93f1b2b1d58b016c010c368cc514fdcadb1b00fb2ff5d973c0e51abae5"
-    },
-    {
       "path": "services/ui-v3/.openai/hosting.json",
       "bytes": 31,
       "sha256": "d532abb65cf9ae20634b464d954cb4a08a0de9f3cd3cdf7f9c3ec8948826d947"
@@ -516,14 +516,14 @@
       "sha256": "b6a6adaa4fab3234676116dd1c9cb6611275ab9d92dd26f5bf402393e3744bf6"
     },
     {
-      "path": "services/ui-v3/src/api.ts",
-      "bytes": 11544,
-      "sha256": "d92c692c3952d0823c3e3a1047fcb068af0399b18cbd889075b1155094ba1ce5"
+      "path": "services/ui-v3/src/App.tsx",
+      "bytes": 59675,
+      "sha256": "09e750d0ca00435d0d048609adf390ad29198d1335b14cf69eacd5519169dc1c"
     },
     {
-      "path": "services/ui-v3/src/App.tsx",
-      "bytes": 59057,
-      "sha256": "f90042dfb15f5165d58b9cc556ea639c73b94993bb70c84a4dab0c00e2198e42"
+      "path": "services/ui-v3/src/api.ts",
+      "bytes": 12377,
+      "sha256": "fd3ca42506c24924e1c68dcc381f4d7edce9e2d0a701ad1ea741dc490cda49ed"
     },
     {
       "path": "services/ui-v3/src/canvas-focus.tsx",
@@ -537,8 +537,13 @@
     },
     {
       "path": "services/ui-v3/src/components/AccountCenter.tsx",
-      "bytes": 28265,
-      "sha256": "44bfc958e36a64cf184ba5405c4b24042065e4bcff844d721c5af087e3ecd9f0"
+      "bytes": 28548,
+      "sha256": "88117f97dd91806ec290d3e12b54a297f9326a75b46356128efa9c7e86819bc8"
+    },
+    {
+      "path": "services/ui-v3/src/components/AdminConsole.tsx",
+      "bytes": 19588,
+      "sha256": "0a08ba0c073b615631c0aacb9f499da5bffd93a624b8f493f32a7df83e2f679a"
     },
     {
       "path": "services/ui-v3/src/components/AgentPanel.tsx",
@@ -692,13 +697,13 @@
     },
     {
       "path": "services/ui-v3/src/styles.css",
-      "bytes": 139971,
-      "sha256": "1a0ccb9c9309b0e6ea43ed08f593c6a159c7286a3b84e1918e32712833a97437"
+      "bytes": 161463,
+      "sha256": "9bd35545031556f16ef8cd187e4e83f3b679e0ac5b5a51b15ddc753f04d8a206"
     },
     {
       "path": "services/ui-v3/src/types.ts",
-      "bytes": 5737,
-      "sha256": "187a63fd5167abde29b97bfdbebb7cfa83ad472c4e53275792a29e4ea421c9ef"
+      "bytes": 7399,
+      "sha256": "637644c8584c553def784377155c870659a9f29f2f0e0ae230dc2a70702007ba"
     },
     {
       "path": "services/ui-v3/src/video-options.ts",
@@ -759,6 +764,31 @@
       "path": "services/ui-v3/worker/index.js",
       "bytes": 483,
       "sha256": "2dd0615a445143933d88d4271f54f5d63ee951421fcd08c5a7617bb09c564389"
+    },
+    {
+      "path": "services/ui/app.js",
+      "bytes": 35992,
+      "sha256": "44a14f668d49d3e162f40183d10441243b17922b275b218130b68c85ee1dc7f7"
+    },
+    {
+      "path": "services/ui/canvas-v2.css",
+      "bytes": 11558,
+      "sha256": "d4dcb0e92540be592320f6bc478c65122a78e8318ef498f6d704280949a32457"
+    },
+    {
+      "path": "services/ui/canvas-v2.js",
+      "bytes": 63974,
+      "sha256": "d3d650b0bc134451b464c6d1b971392d56bc250d84807df3d91a3b58d2ee6d9c"
+    },
+    {
+      "path": "services/ui/index.html",
+      "bytes": 9634,
+      "sha256": "ad41527b2106ed4276829f49cf488a572b8931b8b7c3a00fea24cbe3543e582f"
+    },
+    {
+      "path": "services/ui/styles.css",
+      "bytes": 14179,
+      "sha256": "f97b1c93f1b2b1d58b016c010c368cc514fdcadb1b00fb2ff5d973c0e51abae5"
     },
     {
       "path": "tools/h3_runtime_doctor.py",

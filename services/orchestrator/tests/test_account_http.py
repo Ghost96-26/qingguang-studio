@@ -6,7 +6,7 @@ import unittest
 from contextlib import ExitStack
 from io import BytesIO
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import PropertyMock, patch
 
 from fastapi.testclient import TestClient
 from PIL import Image
@@ -127,3 +127,37 @@ class AccountHttpTests(unittest.TestCase):
         self.assertEqual(normalize_avatar(""), "")
         cleared = self.owner.patch("/v1/auth/profile", json={"avatar_image": ""}).json()
         self.assertEqual(cleared["user"]["avatar_image"], "")
+
+    def test_local_admin_console_lists_controls_and_protects_accounts(self):
+        viewer, user = self.register(email="managed-http@example.com", role="editor")
+        overview = self.owner.get("/v1/admin/overview")
+        self.assertEqual(overview.status_code, 200, overview.text)
+        self.assertGreaterEqual(overview.json()["users"], 2)
+        users = self.owner.get("/v1/admin/users")
+        self.assertEqual(users.status_code, 200, users.text)
+        self.assertIn(user["id"], {item["id"] for item in users.json()})
+        self.assertEqual(viewer.get("/v1/admin/users").status_code, 403)
+
+        updated = self.owner.patch(
+            f"/v1/admin/users/{user['id']}",
+            json={"can_create_projects": False, "monthly_compute_minutes_limit": 12, "max_active_jobs": 3},
+        )
+        self.assertEqual(updated.status_code, 200, updated.text)
+        self.assertFalse(updated.json()["can_create_projects"])
+        self.assertEqual(updated.json()["monthly_compute_seconds_limit"], 720)
+        self.assertEqual(updated.json()["max_active_jobs"], 3)
+        self.assertTrue(any(item["action"] == "admin.user_update" for item in self.owner.get("/v1/admin/access-events").json()))
+
+        suspended = self.owner.patch(f"/v1/admin/users/{user['id']}", json={"status": "suspended"})
+        self.assertEqual(suspended.status_code, 200, suspended.text)
+        self.assertEqual(viewer.get("/v1/auth/me").status_code, 401)
+        self.assertEqual(self.owner.patch("/v1/admin/users/local-owner", json={"status": "suspended"}).status_code, 422)
+
+    def test_admin_routes_reject_remote_requests_even_with_edge_secret(self):
+        with patch("services.orchestrator.workbench.config.Settings.public_edge_secret", new_callable=PropertyMock, return_value="edge-test-secret"):
+            remote = TestClient(api.app, base_url="https://studio.example")
+            self.stack.callback(remote.close)
+            remote.cookies.update(self.owner.cookies)
+            remote.headers.update({"X-CSRF-Token": self.owner.headers["X-CSRF-Token"], "X-Qingguang-Edge-Secret": "edge-test-secret"})
+            self.assertEqual(remote.get("/v3/admin").status_code, 403)
+            self.assertEqual(remote.get("/v1/admin/overview").status_code, 403)
